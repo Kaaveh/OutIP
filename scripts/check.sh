@@ -11,7 +11,7 @@ bad=$(grep -rhE '^[[:space:]]*(@[A-Za-z_]+[[:space:]]+)*import[[:space:]]' Sourc
 [ -z "$bad" ] || fail "Sources/OutIPCore imports more than Foundation: $bad"
 
 # 2. No SwiftUI, network code only in Checker.swift, no cleartext URL.
-if grep -rq 'import SwiftUI' Sources; then fail "Sources imports SwiftUI"; fi
+if grep -rqE 'import[[:space:]]+SwiftUI' Sources; then fail "Sources imports SwiftUI"; fi
 bad=$(grep -rlE 'URLSession|import Network|NWPathMonitor' Sources | grep -vx 'Sources/OutIP/Checker.swift' || true)
 [ -z "$bad" ] || fail "network code outside Sources/OutIP/Checker.swift: $bad"
 if grep -rq 'http://' Sources; then fail "Sources contains http://"; fi

@@ -8,6 +8,7 @@ identity="${OUTIP_SIGN_IDENTITY:--}"
 OUTIP_SIGN_IDENTITY="$identity" scripts/build-app.sh
 
 pkill -x OutIP || true
+while pgrep -x OutIP >/dev/null; do sleep 0.2; done  # else open may hit the dying instance
 rm -rf /Applications/OutIP.app
 ditto build/OutIP.app /Applications/OutIP.app
 open /Applications/OutIP.app

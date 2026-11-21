@@ -101,18 +101,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     /// Makes the address the only content of the clipboard (R13).
     @objc private func copyAddress(_ sender: NSMenuItem) {
-        guard let address = sender.representedObject as? String else { return }
+        guard !selfCheck, let address = sender.representedObject as? String else { return }
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(address, forType: .string)
     }
 
     /// Stores the chosen interval (R15).
     @objc private func chooseInterval(_ sender: NSMenuItem) {
+        guard !selfCheck else { return }  // R22
         UserDefaults.standard.set(sender.tag, forKey: "interval")
     }
 
     /// The only place that calls `register()` (R19).
     @objc private func toggleLaunchAtLogin() {
+        guard !selfCheck else { return }  // R22
         let service = SMAppService.mainApp
         do {
             if service.status == .enabled {

@@ -1,5 +1,6 @@
 import AppKit
 import OutIPCore
+import ServiceManagement
 
 final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private let selfCheck: Bool
@@ -8,7 +9,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private let locale: Locale
     private lazy var statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
 
-    /// The two modes differ only here: where the status, the calendar and the locale come from (R20).
+    /// The two modes differ only here and in `interval`: where the status, the calendar and the locale come from (R20).
     init(selfCheck: Bool) {
         self.selfCheck = selfCheck
         if selfCheck {
@@ -43,7 +44,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
     }
 
-    private var interval: Int { Interval.fallback }
+    /// The one stored value, in whole seconds; the self-check uses 30 and never reads `UserDefaults` (R4, R20, R22).
+    private var interval: Int {
+        selfCheck ? Interval.fallback : Interval.resolve(UserDefaults.standard.object(forKey: "interval") as? Int)
+    }
 
     /// Rebuilt from the kept status each time the menu opens; opening it starts no check (R12–R17).
     func menuNeedsUpdate(_ menu: NSMenu) {
@@ -78,7 +82,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         every.submenu = intervals
         menu.addItem(every)
 
-        menu.addItem(NSMenuItem(title: "Launch at login", action: nil, keyEquivalent: ""))
+        let login = item("Launch at login", #selector(toggleLaunchAtLogin))
+        // The self-check calls no ServiceManagement, so it draws the item unchecked (R18, R22).
+        login.state = !selfCheck && SMAppService.mainApp.status == .enabled ? .on : .off
+        menu.addItem(login)
 
         menu.addItem(.separator())
         let quit = NSMenuItem(title: "Quit OutIP", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
@@ -99,5 +106,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         NSPasteboard.general.setString(address, forType: .string)
     }
 
-    @objc private func chooseInterval(_ sender: NSMenuItem) {}
+    /// Stores the chosen interval (R15).
+    @objc private func chooseInterval(_ sender: NSMenuItem) {
+        UserDefaults.standard.set(sender.tag, forKey: "interval")
+    }
+
+    /// The only place that calls `register()` (R19).
+    @objc private func toggleLaunchAtLogin() {
+        let service = SMAppService.mainApp
+        do {
+            if service.status == .enabled {
+                try service.unregister()
+            } else {
+                try service.register()
+            }
+        } catch {
+            NSLog("OutIP: Launch at login failed: %@", error.localizedDescription)
+        }
+        if service.status == .requiresApproval {
+            SMAppService.openSystemSettingsLoginItems()
+        }
+    }
 }

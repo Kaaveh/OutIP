@@ -41,6 +41,37 @@ final class Checker {
         return nil
     }
 
+    /// `OutIP --probe`: asks every endpoint once, each over its own session, and prints no address or country (R12–R14).
+    /// Returns the exit status: 0 when at least one endpoint answered.
+    static func probe() async -> Int32 {
+        var readings: [Reading] = []
+        for endpoint in Lookup.chain {
+            let session = session()
+            let start = Date()
+            let outcome: String
+            do {
+                readings.append(try await attempt(endpoint, in: session))
+                outcome = "ok"
+            } catch AttemptError.http(let status) {
+                outcome = "failed (http \(status))"
+            } catch AttemptError.parse {
+                outcome = "failed (parse)"
+            } catch let error as URLError where error.code == .timedOut {
+                outcome = "failed (timeout)"
+            } catch {
+                let error = error as NSError
+                outcome = "failed (\(error.domain) \(error.code))"
+            }
+            session.invalidateAndCancel()
+            print("\(endpoint.url.host() ?? ""): \(outcome) \(String(format: "%.1f", Date().timeIntervalSince(start))) s")
+        }
+        let countries = readings.compactMap(\.countryCode)
+        let agree = readings.count < 2 ? "n/a"
+            : Set(readings.map(\.address)).count == 1 && Set(countries).count <= 1 ? "yes" : "no"
+        print("agree: \(agree)")
+        return readings.isEmpty ? 1 : 0
+    }
+
     private nonisolated enum AttemptError: Error { case http(Int), parse }
 
     /// One GET: a reading when the status is 200 and the body parses (R3).

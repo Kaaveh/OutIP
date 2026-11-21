@@ -1,6 +1,6 @@
 # Spec: compact-bar
 
-Module 4 in the OutIP capability map ([CAPABILITY-MAP.md](CAPABILITY-MAP.md)). It depends on `core-rules`, `menubar-app` and `ip-check`. Status: specified, not built.
+Module 4 in the OutIP capability map ([CAPABILITY-MAP.md](CAPABILITY-MAP.md)). It depends on `core-rules`, `menubar-app` and `ip-check`. Status: built; manual QA open.
 
 ## Objective
 
@@ -82,8 +82,6 @@ As in `core-rules` and `menubar-app`.
 
 ## Success Criteria
 
-Done when: `scripts/check.sh` passes with the R1 tests and the R7 output.
-
 Manual QA (the user, on the installed app after `scripts/install.sh`):
 
 - [ ] Unticking `Show address in bar` leaves only the flag in the bar, and the status item gets narrower.
@@ -96,12 +94,3 @@ Manual QA (the user, on the installed app after `scripts/install.sh`):
 ## Open Questions
 
 None.
-
-## Tasks (build order)
-
-- T1. `Display.bar(for:showAddress:)` and the R1 table in `DisplayTests.swift`; update the one caller in `AppDelegate.show` to pass `true`.
-  Verify: `swift build && swift test`
-- T2. The stored mode (R2, R3), the `Show address in bar` item (R4), ⌥-click (R5, R6), `SelfCheck.run` taking the menu, and the R7 line in `scripts/check.sh`.
-  Verify: `scripts/check.sh`
-- T3. Docs: core-rules R16 and its Interface take the `showAddress` parameter; menubar-app R4 says two stored values, R10–R17 gain the item and the click handling, and R25 gains the R7 line; the map's shared decision "OutIP stores one value" names both values; `README.md` mentions flag-only mode and ⌥-click in one sentence. Then the spec workflow's step 4: this spec's status line and index row, delete Tasks and the automated Success Criteria.
-  Verify: `scripts/check.sh`

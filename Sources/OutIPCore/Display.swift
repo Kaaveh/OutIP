@@ -35,10 +35,12 @@ public enum Display {
         return countryCode.unicodeScalars.map { String(UnicodeScalar(0x1F1E6 + $0.value - 65)!) }.joined()
     }
 
-    /// "<flag> <address>" for a reading, a symbol while checking or after no answer (core-rules R16).
-    public static func bar(for status: Status) -> BarContent {
+    /// "<flag> <address>" for a reading, or the flag alone when `showAddress` is false;
+    /// a symbol while checking or after no answer (core-rules R16, compact-bar R1).
+    public static func bar(for status: Status, showAddress: Bool) -> BarContent {
         switch status {
-        case .reading(let reading, _): .text("\(flag(for: reading.countryCode)) \(reading.address)")
+        case .reading(let reading, _):
+            .text(showAddress ? "\(flag(for: reading.countryCode)) \(reading.address)" : flag(for: reading.countryCode))
         case .checking: .symbol(name: "network", description: "OutIP: checking")
         case .noAnswer: .symbol(name: "network.slash", description: "OutIP: no answer")
         }

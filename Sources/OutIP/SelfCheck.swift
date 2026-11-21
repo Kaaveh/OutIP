@@ -17,9 +17,9 @@ enum SelfCheck {
     )
 
     /// Checks the bar's symbols, prints the bar and the menu, keeps the item on screen for 5 s, prints the footprint and exits.
-    static func run(_ item: NSStatusItem) {
+    static func run(_ item: NSStatusItem, menu: NSMenu) {
         for status in [Status.checking, .noAnswer(at: .distantPast)] {
-            if case .symbol(let name, let description) = Display.bar(for: status),
+            if case .symbol(let name, let description) = Display.bar(for: status, showAddress: true),
                NSImage(systemSymbolName: name, accessibilityDescription: description) == nil {
                 FileHandle.standardError.write(Data("self-check: missing symbol \(name)\n".utf8))
                 exit(1)
@@ -27,10 +27,8 @@ enum SelfCheck {
         }
 
         var lines = ["bar: " + (item.button?.title ?? "").trimmingCharacters(in: .whitespaces)]
-        if let menu = item.menu {
-            menu.delegate?.menuNeedsUpdate?(menu)
-            lines += menu.items.map { "menu: " + describe($0) }
-        }
+        menu.delegate?.menuNeedsUpdate?(menu)
+        lines += menu.items.map { "menu: " + describe($0) }
         print(lines.joined(separator: "\n").replacingOccurrences(of: "\u{202F}", with: " "))
 
         Timer.scheduledTimer(withTimeInterval: 5, repeats: false) { _ in

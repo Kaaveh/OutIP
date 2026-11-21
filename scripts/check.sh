@@ -42,6 +42,7 @@ menu: 12:05:13 PM · ipv4.icanhazip.com
 menu: ---
 menu: Refresh now
 menu: Check every > 10 seconds, ✓ 30 seconds, 1 minute, 5 minutes
+menu: ✓ Show address in bar
 menu: Launch at login
 menu: ---
 menu: Quit OutIP'

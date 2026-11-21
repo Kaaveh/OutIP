@@ -83,7 +83,7 @@ Every network check ran through a tunnel VPN, the only state tested. No system p
 - A reading is on screen only while the last check produced it. A failed check shows the no-answer state.
 - Requests follow the system proxy settings (`URLSession`'s default), so OutIP reports what a browser on this Mac would.
 - HTTPS only, default certificate trust, no `NSAppTransportSecurity` key. Network code sits in one file, `Sources/OutIP/Checker.swift`.
-- OutIP stores one value, the check interval, in its `UserDefaults`.
+- OutIP stores two values in its `UserDefaults`: the check interval and whether the bar shows the address.
 - The address is personal data: it is shown in the bar and the menu, copied when the user asks, and written nowhere else. No log line, file or script output carries an address or a country from a real request.
 - The bundle id is `ir.kaavehdev.outip`. It never changes after the first install, because the login item and the stored interval hang on it.
 - Signing is ad-hoc, for the checks and for the install: OutIP holds no permission that a changing signature would lose. `OUTIP_SIGN_IDENTITY` lets a person sign with a keychain identity; no identity name, team id or hash is ever committed.

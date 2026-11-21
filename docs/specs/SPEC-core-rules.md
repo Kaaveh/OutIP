@@ -102,7 +102,7 @@ Every rule OutIP shows or acts on is a pure function in one small library, teste
 
 **Status and bar**
 - R15. `Status` is what the app knows right now: `checking` (no check has finished since launch), `reading` with a `Reading` and the time it arrived, or `noAnswer` with the time the check ended.
-- R16. `Display.bar(for:)`:
+- R16. `Display.bar(for:showAddress:)`, with `showAddress` true:
 
   | Status | Bar |
   |---|---|
@@ -110,6 +110,8 @@ Every rule OutIP shows or acts on is a pure function in one small library, teste
   | `reading` without a country | the text `🌐 203.0.113.7` |
   | `checking` | the SF Symbol `network`, described as `OutIP: checking` |
   | `noAnswer` | the SF Symbol `network.slash`, described as `OutIP: no answer` |
+
+  With `showAddress` false, a reading shows the flag alone, `🇸🇪` or `🌐`, and the symbols don't change (compact-bar R1).
 
 **Menu text**
 - R17. `Display.info(for:calendar:locale:)` returns the text of the menu's first block:
@@ -196,7 +198,7 @@ public struct MenuInfo: Equatable, Sendable {
 
 public enum Display {
     public static func flag(for countryCode: String?) -> String
-    public static func bar(for status: Status) -> BarContent
+    public static func bar(for status: Status, showAddress: Bool) -> BarContent
     public static func info(for status: Status, calendar: Calendar, locale: Locale) -> MenuInfo
 }
 

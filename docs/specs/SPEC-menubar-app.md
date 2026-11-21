@@ -14,7 +14,7 @@ The shell is thin: it keeps one `Status`, hands it to `OutIPCore`, and draws wha
 - R1. An executable target `OutIP` in the package, depending on `OutIPCore`. AppKit lifecycle in `main.swift`: `NSApplication.shared`, a delegate, `setActivationPolicy(.accessory)`, `run()`. No storyboard, no nib, no SwiftUI.
 - R2. The target sets `.defaultIsolation(MainActor.self)`: the whole shell is main-thread code.
 - R3. This module uses AppKit and ServiceManagement, and has no network code.
-- R4. OutIP stores one value: the interval in whole seconds, under the key `interval` in `UserDefaults.standard`. It is read through `Interval.resolve`, so a missing or foreign value means 30.
+- R4. OutIP stores two values in `UserDefaults.standard`. The interval in whole seconds, under the key `interval`, is read through `Interval.resolve`, so a missing or foreign value means 30. Whether the bar shows the address is a `Bool` under `showAddress`; a missing or foreign value means true (compact-bar R2).
 - R5. Normal mode needs the app bundle. When `Bundle.main.bundleIdentifier` is `nil` (as under `swift run`) and no mode flag is given (`--self-check` here, `--probe` with `ip-check`), the process prints one line to stderr and exits with status 64. Outside the bundle the login item and the stored interval would hang on the wrong identity.
 
 **Bundle**
@@ -42,15 +42,15 @@ The shell is thin: it keeps one `Status`, hands it to `OutIPCore`, and draws wha
 - R9. The delegate keeps one `Status`, `checking` at launch, and one method `show(_:)` that stores a new status and draws the bar. Nothing else changes the bar.
 
 **Bar**
-- R10. One `NSStatusItem` of variable length.
-- R11. `Display.bar` decides what it shows. A text becomes the button's title, with no image. A symbol becomes a template image from `NSImage(systemSymbolName:accessibilityDescription:)` with the given description, and the title is empty.
+- R10. One `NSStatusItem` of variable length. Its `menu` stays nil; the button's action fires on left and right mouse down and opens the menu under the item, or with ⌥ held switches the address mode (compact-bar R5, R6).
+- R11. `Display.bar`, given the stored address mode, decides what it shows. A text becomes the button's title, with no image. A symbol becomes a template image from `NSImage(systemSymbolName:accessibilityDescription:)` with the given description, and the title is empty.
 
 **Menu**
 - R12. The menu is rebuilt in `menuNeedsUpdate` from the kept status. Opening it starts no check. Its `autoenablesItems` is `false`.
 - R13. The first block comes from `Display.info`: the header as `NSMenuItem.sectionHeader(title:)`; then, when there is a `copyTitle`, an item with that title that makes `address` the only content of `NSPasteboard.general`; then, when there is a `detail`, a disabled item with that text.
 - R14. Then a separator and `Refresh now` (key equivalent `r`). Its action is wired by `ip-check`; in this module a click does nothing.
 - R15. `Check every`, with a submenu of one item per value in `Interval.options`, titled by `Interval.title`. The stored interval (R4) carries a checkmark. A click stores that value.
-- R16. `Launch at login` (R18–R19).
+- R16. `Show address in bar`, checked when the address mode is true; a click switches it and redraws the bar (compact-bar R3, R4). Then `Launch at login` (R18–R19).
 - R17. The menu ends with a separator and `Quit OutIP` (key equivalent `q`).
 
 **Launch at login**
@@ -58,7 +58,7 @@ The shell is thin: it keeps one `Status`, hands it to `OutIPCore`, and draws wha
 - R19. A click calls `unregister()` when enabled and `register()` otherwise. If the status is `.requiresApproval` afterwards, it calls `SMAppService.openSystemSettingsLoginItems()`. An error is logged with `NSLog` and changes nothing else.
 
 **Self-check**
-- R20. `OutIP --self-check` runs the same status item and menu code as normal mode. Four things differ: the status is the sample of R21, the calendar is Gregorian in GMT, the locale is `en_US`, and the interval is 30 without `UserDefaults` being read.
+- R20. `OutIP --self-check` runs the same status item and menu code as normal mode. Five things differ: the status is the sample of R21, the calendar is Gregorian in GMT, the locale is `en_US`, the interval is 30 and the address shows, both without `UserDefaults` being read.
 - R21. The sample is a reading with the address `203.0.113.7`, the country `SE` and the source `ipv4.icanhazip.com`, arrived at 2026-11-21 12:05:13 GMT.
 - R22. It calls no `URLSession`, no `Network`, no ServiceManagement, no `NSPasteboard` and no `UserDefaults`, so it can't raise a prompt, send a request or change anything on the Mac. This outranks R20: `Launch at login` is drawn unchecked.
 - R23. It first checks that both symbols of core-rules R16 resolve. A missing one prints `self-check: missing symbol <name>` to stderr and exits with status 1.
@@ -76,6 +76,7 @@ The shell is thin: it keeps one `Status`, hands it to `OutIPCore`, and draws wha
   menu: ---
   menu: Refresh now
   menu: Check every > 10 seconds, ✓ 30 seconds, 1 minute, 5 minutes
+  menu: ✓ Show address in bar
   menu: Launch at login
   menu: ---
   menu: Quit OutIP
@@ -120,7 +121,7 @@ Provided to `ip-check`:
 ```
 Package.swift                          + the executable target OutIP
 Sources/OutIP/main.swift               the bundle guard, NSApplication, the delegate
-Sources/OutIP/AppDelegate.swift        status item, menu, Copy, the interval, Launch at login
+Sources/OutIP/AppDelegate.swift        status item, menu, Copy, the interval, the address mode, Launch at login
 Sources/OutIP/SelfCheck.swift          the sample, the printed lines, the footprint
 Support/Info.plist
 scripts/build-app.sh                   release build → build/OutIP.app, signed

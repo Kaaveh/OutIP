@@ -8,6 +8,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private let calendar: Calendar
     private let locale: Locale
     private lazy var statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+    /// Not `statusItem.menu`, which stays nil so ⌥-click can reach `barClicked` (compact-bar R6).
+    private let menu = NSMenu()
     /// Nil in the self-check, which sends no request (menubar-app R22).
     private var checker: Checker?
 
@@ -22,13 +24,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        let menu = NSMenu()
         menu.autoenablesItems = false
         menu.delegate = self
-        statusItem.menu = menu
+        if let button = statusItem.button {
+            button.target = self
+            button.action = #selector(barClicked)
+            button.sendAction(on: [.leftMouseDown, .rightMouseDown])
+        }
         show(status)
         if selfCheck {
-            SelfCheck.run(statusItem)
+            SelfCheck.run(statusItem, menu: menu)
         } else {
             checker = Checker(show: { [unowned self] in show($0) }, interval: { [unowned self] in interval })
             checker?.start()
@@ -39,7 +44,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     func show(_ status: Status) {
         self.status = status
         guard let button = statusItem.button else { return }
-        switch Display.bar(for: status) {
+        switch Display.bar(for: status, showAddress: showAddress) {
         case .text(let text):
             button.image = nil
             button.title = text
@@ -51,9 +56,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
     }
 
-    /// The one stored value, in whole seconds; the self-check uses 30 and never reads `UserDefaults` (R4, R20, R22).
+    /// The first stored value, in whole seconds; the self-check uses 30 and never reads `UserDefaults` (R4, R20, R22).
     private var interval: Int {
         selfCheck ? Interval.fallback : Interval.resolve(UserDefaults.standard.object(forKey: "interval") as? Int)
+    }
+
+    /// The second stored value; missing or not a `Bool` means true, and the self-check uses true (compact-bar R2, R7).
+    private var showAddress: Bool {
+        selfCheck || UserDefaults.standard.object(forKey: "showAddress") as? Bool ?? true
+    }
+
+    /// ⌥-click switches the mode; any other click opens the menu under the item (compact-bar R5, R6).
+    @objc private func barClicked() {
+        if NSApp.currentEvent?.modifierFlags.contains(.option) == true {
+            toggleShowAddress()
+        } else {
+            statusItem.menu = menu
+            statusItem.button?.performClick(nil)
+            statusItem.menu = nil
+        }
     }
 
     /// Rebuilt from the kept status each time the menu opens; opening it starts no check (R12–R17).
@@ -91,6 +112,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         every.submenu = intervals
         menu.addItem(every)
 
+        let address = item("Show address in bar", #selector(toggleShowAddress))
+        address.state = showAddress ? .on : .off
+        menu.addItem(address)
+
         let login = item("Launch at login", #selector(toggleLaunchAtLogin))
         // The self-check calls no ServiceManagement, so it draws the item unchecked (R18, R22).
         login.state = !selfCheck && SMAppService.mainApp.status == .enabled ? .on : .off
@@ -125,6 +150,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         guard !selfCheck, sender.tag != interval else { return }  // R22; the same interval keeps the pending timer
         UserDefaults.standard.set(sender.tag, forKey: "interval")
         checker?.intervalChanged()
+    }
+
+    /// Stores the opposite mode and redraws the kept status; starts no check (compact-bar R3, R4).
+    @objc private func toggleShowAddress() {
+        guard !selfCheck else { return }  // R22
+        UserDefaults.standard.set(!showAddress, forKey: "showAddress")
+        show(status)
     }
 
     /// The only place that calls `register()` (R19).

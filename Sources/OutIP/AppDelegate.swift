@@ -3,11 +3,19 @@ import OutIPCore
 
 final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private let selfCheck: Bool
-    private var status: Status = .checking
+    private var status: Status
+    private let calendar: Calendar
+    private let locale: Locale
     private lazy var statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
 
+    /// The two modes differ only here: where the status, the calendar and the locale come from (R20).
     init(selfCheck: Bool) {
         self.selfCheck = selfCheck
+        if selfCheck {
+            (status, calendar, locale) = (SelfCheck.sample, SelfCheck.calendar, SelfCheck.locale)
+        } else {
+            (status, calendar, locale) = (.checking, .autoupdatingCurrent, .autoupdatingCurrent)
+        }
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -35,10 +43,61 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
     }
 
+    private var interval: Int { Interval.fallback }
+
+    /// Rebuilt from the kept status each time the menu opens; opening it starts no check (R12–R17).
     func menuNeedsUpdate(_ menu: NSMenu) {
         menu.removeAllItems()
+
+        let info = Display.info(for: status, calendar: calendar, locale: locale)
+        menu.addItem(.sectionHeader(title: info.header))
+        if let copyTitle = info.copyTitle {
+            let copy = item(copyTitle, #selector(copyAddress(_:)))
+            copy.representedObject = info.address
+            menu.addItem(copy)
+        }
+        if let detail = info.detail {
+            let line = NSMenuItem(title: detail, action: nil, keyEquivalent: "")
+            line.isEnabled = false
+            menu.addItem(line)
+        }
+
+        menu.addItem(.separator())
+        menu.addItem(NSMenuItem(title: "Refresh now", action: nil, keyEquivalent: "r"))  // ip-check wires the action
+
+        let intervals = NSMenu()
+        intervals.autoenablesItems = false
+        let current = interval
+        for seconds in Interval.options {
+            let choice = item(Interval.title(for: seconds), #selector(chooseInterval(_:)))
+            choice.tag = seconds
+            choice.state = seconds == current ? .on : .off
+            intervals.addItem(choice)
+        }
+        let every = NSMenuItem(title: "Check every", action: nil, keyEquivalent: "")
+        every.submenu = intervals
+        menu.addItem(every)
+
+        menu.addItem(NSMenuItem(title: "Launch at login", action: nil, keyEquivalent: ""))
+
+        menu.addItem(.separator())
         let quit = NSMenuItem(title: "Quit OutIP", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
         quit.target = NSApp
         menu.addItem(quit)
     }
+
+    private func item(_ title: String, _ action: Selector) -> NSMenuItem {
+        let item = NSMenuItem(title: title, action: action, keyEquivalent: "")
+        item.target = self
+        return item
+    }
+
+    /// Makes the address the only content of the clipboard (R13).
+    @objc private func copyAddress(_ sender: NSMenuItem) {
+        guard let address = sender.representedObject as? String else { return }
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(address, forType: .string)
+    }
+
+    @objc private func chooseInterval(_ sender: NSMenuItem) {}
 }

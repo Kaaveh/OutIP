@@ -1,4 +1,5 @@
-import Foundation
+import AppKit
+import Network
 import OutIPCore
 
 /// The check: the endpoint chain over a new session per check, and when to ask again (ip-check R1–R11).
@@ -8,6 +9,10 @@ final class Checker {
     private let interval: () -> Int
     private var task: Task<Void, Never>?
     private var timer: Timer?
+    /// The shared wait of the debounced triggers (R9).
+    private var debounce: Timer?
+    /// Between screensDidSleep and screensDidWake no check starts (R10).
+    private var screensAsleep = false
     /// Bumped whenever a check is replaced; a check that finds a newer one drops its answer (R8).
     private var generation = 0
     /// Failed checks in a row (R7).
@@ -18,6 +23,28 @@ final class Checker {
     init(show: @escaping (Status) -> Void, interval: @escaping () -> Int) {
         self.show = show
         self.interval = interval
+    }
+
+    /// Starts watching the triggers and runs the launch check (R8–R10).
+    func start() {
+        let center = NSWorkspace.shared.notificationCenter
+        _ = center.addObserver(forName: NSWorkspace.didWakeNotification, object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { self?.trigger() }
+        }
+        _ = center.addObserver(forName: NSWorkspace.screensDidWakeNotification, object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated {
+                self?.screensAsleep = false
+                self?.trigger()
+            }
+        }
+        _ = center.addObserver(forName: NSWorkspace.screensDidSleepNotification, object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { self?.screensDidSleep() }
+        }
+        Task { [weak self] in
+            // The first update is the current path, not a change.
+            for await _ in NWPathMonitor().dropFirst() { self?.trigger() }
+        }
+        check()
     }
 
     /// Starts a check now, in place of the pending timer and a running check (R4, R6–R8).
@@ -42,24 +69,47 @@ final class Checker {
         schedule()
     }
 
-    /// Cancels the pending timer and a running check, whose answer is then dropped (R8).
+    /// A debounced trigger: drops the pending timer and a running check, and starts a check
+    /// `Schedule.debounce` after the latest trigger; the old reading stays meanwhile (R8, R9).
+    private func trigger() {
+        guard !screensAsleep else { return }
+        replace()
+        debounce = oneShot(after: Schedule.debounce) { [weak self] in self?.check(afterTrigger: true) }
+    }
+
+    /// No timer and no trigger until the display wakes; a running check may finish (R10).
+    private func screensDidSleep() {
+        screensAsleep = true
+        timer?.invalidate()
+        timer = nil
+        debounce?.invalidate()
+        debounce = nil
+    }
+
+    /// Cancels the pending timers and a running check, whose answer is then dropped (R8).
     private func replace() {
         timer?.invalidate()
         timer = nil
+        debounce?.invalidate()
+        debounce = nil
         task?.cancel()
         task = nil
         generation += 1
     }
 
-    /// The one-shot timer for the next check (R6).
+    /// The timer for the next check; none while the display sleeps (R6, R10).
     private func schedule() {
+        guard !screensAsleep else { return }
         let delay = Schedule.delay(interval: TimeInterval(interval()), failures: failures, afterTrigger: afterTrigger)
-        let timer = Timer(timeInterval: delay, repeats: false) { [weak self] _ in
-            MainActor.assumeIsolated { self?.check() }
-        }
+        timer = oneShot(after: delay) { [weak self] in self?.check() }
+    }
+
+    /// A one-shot timer in `.common` run-loop modes with a tolerance of a tenth of the delay (R6).
+    private func oneShot(after delay: TimeInterval, _ action: @escaping @MainActor () -> Void) -> Timer {
+        let timer = Timer(timeInterval: delay, repeats: false) { _ in MainActor.assumeIsolated(action) }
         timer.tolerance = delay / 10
         RunLoop.main.add(timer, forMode: .common)
-        self.timer = timer
+        return timer
     }
 
     /// A new ephemeral session: a new connection, this moment's route and proxy (R2). The caller invalidates it.

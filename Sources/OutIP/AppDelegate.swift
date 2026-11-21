@@ -31,7 +31,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             SelfCheck.run(statusItem)
         } else {
             checker = Checker(show: { [unowned self] in show($0) }, interval: { [unowned self] in interval })
-            checker?.check()
+            checker?.start()
         }
     }
 

@@ -7,8 +7,9 @@ OutIP is a macOS menu bar app for one person on their own Mac. The bar shows the
 | `core-rules` | [SPEC-core-rules.md](SPEC-core-rules.md) | The Swift package and `OutIPCore`, the pure rules: reading an endpoint's reply, the endpoint chain, the flag, the bar's content, the menu's text, the intervals, the delay to the next check | — |
 | `menubar-app` | [SPEC-menubar-app.md](SPEC-menubar-app.md) | The AppKit agent app: the bar, the menu, Copy, the interval choice and where it is stored, Launch at login, Quit. Also the bundle, check and install scripts, the self-check and the first memory number | `core-rules` |
 | `ip-check` | [SPEC-ip-check.md](SPEC-ip-check.md) | The check itself: asking the chain over a fresh connection, the status it hands to the app, the timer, the triggers (network change, wake, display sleep, Refresh now), and `--probe` | `menubar-app` |
+| `compact-bar` | [SPEC-compact-bar.md](SPEC-compact-bar.md) | Flag-only mode: the bar shows `🇸🇪` without the address, switched from the menu or with ⌥-click, and remembered | `core-rules`, `menubar-app`, `ip-check` |
 
-Build order: core-rules → menubar-app → ip-check.
+Build order: core-rules → menubar-app → ip-check → compact-bar.
 
 ## Success
 

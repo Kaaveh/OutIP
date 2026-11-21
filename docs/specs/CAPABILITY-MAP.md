@@ -52,6 +52,7 @@ Every network check ran through a tunnel VPN, the only state tested. No system p
 - The SF Symbols `network` and `network.slash` exist.
 - `Locale(identifier: "en_US").localizedString(forRegionCode:)` gives `Sweden` for `SE`, `Unknown Region` for `ZZ` and `nil` for `QQ`.
 - In `en_US` the time with seconds is `12:05:13 PM` with U+202F before `PM`; in `en_GB` it is `12:05:13`.
+- Through `URLSession` (ip-check `--probe`), `https://4.ident.me/json` and `https://checkip.amazonaws.com/` answered with status 200 and parsed, and every reading agreed.
 - A sketch of ip-check's fetcher, timer and triggers compiled in Swift 6 mode with MainActor default isolation, with no warning.
 - Seen with a sibling menu bar app on this Mac (2026-11-20): SwiftPM puts products in `.build/out/Products/<Configuration>/`, and `swift build -c release --show-bin-path` prints the folder; a process started from a shell can build an `NSStatusItem` and its `NSMenu`, print them and exit, with no prompt; such an agent idles at 17 to 18 MB; `/Applications` is writable without `sudo`; `/usr/bin/timeout` exists.
 
@@ -60,7 +61,6 @@ Every network check ran through a tunnel VPN, the only state tested. No system p
 | Item | Answered by |
 |---|---|
 | The chain on a direct connection, with no VPN: which hosts answer. `1.1.1.1` is reported blocked on some networks | ip-check manual QA (`--probe`) |
-| `https://4.ident.me/json` and `https://checkip.amazonaws.com/` through `URLSession` (only `curl` was tried) | ip-check Checks (`--probe`) |
 | A new connection per check across a real VPN or proxy switch | ip-check manual QA |
 | How soon `NWPathMonitor` reports a VPN switching on or off, and whether it reports a change of the system proxy settings | ip-check manual QA |
 | The bytes one check costs. The estimate is 5 to 8 KB, which is 15 to 23 MB a day at 30 s | ip-check manual QA |

@@ -1,6 +1,6 @@
 # Spec: ip-check
 
-Module 3 of 3 in the OutIP capability map ([CAPABILITY-MAP.md](CAPABILITY-MAP.md)). It depends on `menubar-app`. Status: specified, not built.
+Module 3 of 3 in the OutIP capability map ([CAPABILITY-MAP.md](CAPABILITY-MAP.md)). It depends on `menubar-app`. Status: built; manual QA open.
 
 ## Objective
 
@@ -129,12 +129,6 @@ nonisolated static func ask() async -> Reading? {
 
 Done when: `scripts/check.sh` passes, `--probe` has run once with its output in the pull request's text, and the manual QA list stays open.
 
-Automated (the Checks cover them):
-
-- [ ] `scripts/check.sh` exits with 0 and prints `check: OK`, with the self-check's output unchanged.
-- [ ] `OutIP --probe` prints one line per endpoint and an `agree:` line, and no address or country.
-- [ ] `URLSession`, `import Network` and `NWPathMonitor` appear only in `Sources/OutIP/Checker.swift`.
-
 Manual QA (the user, on the installed app; stays open after the build):
 
 - [ ] First launch: the flag and the address show within 5 s, and macOS asks for nothing.
@@ -156,13 +150,6 @@ Manual QA (the user, on the installed app; stays open after the build):
 | User | With the VPN off, which hosts answer? If `ipv4.icanhazip.com` doesn't, the chain is reordered in core-rules R8 |
 | User | If switching the system proxy isn't noticed until the next tick: add the `SCDynamicStore` proxies key as a trigger, or accept the wait |
 | User | If one check costs more than 8 KB: accept it, or raise the default interval |
+| User | In one of the build's two `--probe` runs, `https://1.0.0.1/cdn-cgi/trace` failed with `NSURLErrorDomain -1200` (TLS) while the other four answered; the other run had all five. If it recurs, drop it from the chain or move it last (core-rules R8) |
 | Later | Keeping the reading on screen, dimmed, through one failed check, if the no-answer symbol flickers on a slow connection |
 | Later | `NSLocalNetworkUsageDescription`, if a system proxy on a LAN address makes macOS ask for Local Network access |
-
-## Tasks (build order)
-
-- [ ] T1. One check: `Checker` with the session of R2 and the chain walk of R3, run once at launch and ending in `show` (R1–R5). The self-check doesn't create it. Verify: `scripts/check.sh`.
-- [ ] T2. `--probe` (R12–R14); the bundle guard lets it through (menubar-app R5). Verify: `scripts/check.sh && timeout 60 build/OutIP.app/Contents/MacOS/OutIP --probe`.
-- [ ] T3. The timer: the delay after each check, `failures`, `Refresh now`, the interval change (R6, R7, R11, and the first two rows of R8). Verify: `scripts/check.sh`.
-- [ ] T4. Triggers: the path monitor, wake, the shared debounce, display sleep (the other rows of R8, R9, R10). Verify: `scripts/check.sh`.
-- [ ] T5. Docs and spec workflow: add `--probe` to the commands in `CLAUDE.md` and set the status line in `README.md` to built; delete this section and the automated Success Criteria; set the status line and the row in `docs/specs/README.md` to built with manual QA open; put the probe's output in the pull request. Verify: `scripts/check.sh`.

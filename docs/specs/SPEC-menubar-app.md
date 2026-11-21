@@ -1,6 +1,6 @@
 # Spec: menubar-app
 
-Module 2 of 3 in the OutIP capability map ([CAPABILITY-MAP.md](CAPABILITY-MAP.md)). It depends on `core-rules`. Status: specified, not built.
+Module 2 of 3 in the OutIP capability map ([CAPABILITY-MAP.md](CAPABILITY-MAP.md)). It depends on `core-rules`. Status: built; manual QA open.
 
 ## Objective
 
@@ -167,7 +167,7 @@ Every script is executable, starts with `#!/bin/bash` and `set -euo pipefail`, a
 
 ## Boundaries
 
-- Always: keep rules in `OutIPCore` (a new rule is a new pure function with a test, or it is out of scope); run `scripts/check.sh` before each commit from T2 on; check an API against the installed SDK, or with `ctx7`, before using it from memory.
+- Always: keep rules in `OutIPCore` (a new rule is a new pure function with a test, or it is out of scope); run `scripts/check.sh` before each commit; check an API against the installed SDK, or with `ctx7`, before using it from memory.
 - Ask first (in an unattended run, stop and report it): a dependency; an entitlement, the sandbox or the hardened runtime; a change to the bundle id; a new public name in `OutIPCore`; a second stored value; an `Info.plist` key outside R6; a self-check that can't reach the window server.
 - Never:
   - start OutIP without `--self-check` in an automated session: not with `open`, not by running the binary, not with `swift run`;
@@ -180,12 +180,6 @@ Every script is executable, starts with `#!/bin/bash` and `set -euo pipefail`, a
 ## Success Criteria
 
 Done when: `scripts/check.sh` passes and the self-check's footprint is in the pull request's text; the bar, the menu, the stored interval, Launch at login and the install script are built; the manual QA list stays open.
-
-Automated (the Checks cover them):
-
-- [ ] `scripts/check.sh` exits with 0 and prints `check: OK`.
-- [ ] The self-check prints exactly the lines of R25.
-- [ ] `build/OutIP.app` passes `codesign --verify --strict` and `plutil -lint`, its `LSUIElement` is `true`, and it has no `NSAppTransportSecurity` key.
 
 Manual QA (the user, on the installed app; stays open after the build). Run `scripts/install.sh` yourself, once `ip-check` is built too: before that the bar shows only the `network` symbol.
 
@@ -201,11 +195,3 @@ Manual QA (the user, on the installed app; stays open after the build). Run `scr
 | Owner | Item |
 |---|---|
 | User | If `Launch at login` fails, or doesn't survive a reinstall of the ad-hoc build: sign with a keychain identity (`OUTIP_SIGN_IDENTITY`), or accept ticking it again |
-
-## Tasks (build order)
-
-- [ ] T1. Bundle and skeleton: the `OutIP` target with the bundle guard (R1–R3, R5), `Support/Info.plist` (R6), `scripts/build-app.sh` (R7–R8). The app shows the `network` symbol and a menu with `Quit OutIP`; `--self-check` prints what exists and exits with 0. Verify: `scripts/build-app.sh && timeout 30 build/OutIP.app/Contents/MacOS/OutIP --self-check`.
-- [ ] T2. Bar and menu from the sample: `show(_:)`, the bar, the first block with Copy, `Refresh now`, `Check every` with 30 checked, `Launch at login` not yet wired, Quit (R9–R17); the self-check (R20–R26); `scripts/check.sh` (R27). Verify: `scripts/check.sh`.
-- [ ] T3. The stored interval (R4, R15) and Launch at login (R18–R19). Verify: `scripts/check.sh`, with the self-check's output unchanged.
-- [ ] T4. `scripts/install.sh` (R28). Verify: `bash -n scripts/install.sh`. Don't run it.
-- [ ] T5. Docs and spec workflow: add this module's commands to `CLAUDE.md`, and installing and measuring memory to `README.md`; delete this section and the automated Success Criteria; set the status line and the row in `docs/specs/README.md` to built with manual QA open; put the footprint in the pull request (R30). Verify: `scripts/check.sh`.

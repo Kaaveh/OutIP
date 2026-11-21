@@ -8,6 +8,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private let calendar: Calendar
     private let locale: Locale
     private lazy var statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+    /// Nil in the self-check, which sends no request (menubar-app R22).
+    private var checker: Checker?
 
     /// The two modes differ only here and in `interval`: where the status, the calendar and the locale come from (R20).
     init(selfCheck: Bool) {
@@ -25,7 +27,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         menu.delegate = self
         statusItem.menu = menu
         show(status)
-        if selfCheck { SelfCheck.run(statusItem) }
+        if selfCheck {
+            SelfCheck.run(statusItem)
+        } else {
+            checker = Checker(show: { [unowned self] in show($0) }, interval: { [unowned self] in interval })
+            checker?.start()
+        }
     }
 
     /// Stores a new status and draws the bar; nothing else changes the bar (R9).
@@ -67,7 +74,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
 
         menu.addItem(.separator())
-        menu.addItem(NSMenuItem(title: "Refresh now", action: nil, keyEquivalent: "r"))  // ip-check wires the action
+        let refresh = item("Refresh now", #selector(refreshNow))
+        refresh.keyEquivalent = "r"
+        menu.addItem(refresh)
 
         let intervals = NSMenu()
         intervals.autoenablesItems = false
@@ -106,10 +115,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         NSPasteboard.general.setString(address, forType: .string)
     }
 
-    /// Stores the chosen interval (R15).
+    /// Starts a check now (R14, ip-check R8).
+    @objc private func refreshNow() {
+        checker?.check()
+    }
+
+    /// Stores the chosen interval and reschedules the pending check (R15, ip-check R11).
     @objc private func chooseInterval(_ sender: NSMenuItem) {
-        guard !selfCheck else { return }  // R22
+        guard !selfCheck, sender.tag != interval else { return }  // R22; the same interval keeps the pending timer
         UserDefaults.standard.set(sender.tag, forKey: "interval")
+        checker?.intervalChanged()
     }
 
     /// The only place that calls `register()` (R19).

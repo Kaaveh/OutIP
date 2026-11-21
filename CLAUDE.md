@@ -16,6 +16,7 @@ swift test
 scripts/check.sh                                      # the gate: rules, tests, ad-hoc bundle, self-check (no prompts, no requests)
 scripts/build-app.sh                                  # build/OutIP.app, signed with $OUTIP_SIGN_IDENTITY or ad-hoc
 build/OutIP.app/Contents/MacOS/OutIP --self-check     # sample data; needs the logged-in desktop session
+build/OutIP.app/Contents/MacOS/OutIP --probe          # asks every endpoint once; prints no address (at most 3 runs a session)
 ```
 
 `scripts/install.sh` is for a person only. Each module adds its own commands here when it is built.

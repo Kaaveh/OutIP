@@ -6,7 +6,7 @@ OutIP is built spec-first. A spec keeps the decisions: what the app does, why, a
 |---|---|---|---|
 | `core-rules` | `Package.swift`, `Sources/OutIPCore/`, `Tests/OutIPCoreTests/` | Built | [SPEC-core-rules.md](SPEC-core-rules.md) |
 | `menubar-app` | `Sources/OutIP/`, `Support/Info.plist`, `scripts/` | Built, manual QA open | [SPEC-menubar-app.md](SPEC-menubar-app.md) |
-| `ip-check` | `Sources/OutIP/Checker.swift` | Specified, not built | [SPEC-ip-check.md](SPEC-ip-check.md) |
+| `ip-check` | `Sources/OutIP/Checker.swift` | Built, manual QA open | [SPEC-ip-check.md](SPEC-ip-check.md) |
 
 ## Workflow
 

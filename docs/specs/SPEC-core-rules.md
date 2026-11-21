@@ -1,6 +1,6 @@
 # Spec: core-rules
 
-Module 1 of 3 in the OutIP capability map ([CAPABILITY-MAP.md](CAPABILITY-MAP.md)). It depends on nothing. Status: specified, not built.
+Module 1 of 3 in the OutIP capability map ([CAPABILITY-MAP.md](CAPABILITY-MAP.md)). It depends on nothing. Status: built.
 
 ## Objective
 
@@ -279,21 +279,8 @@ Names in code use American spelling. UI text is English and is written once, in 
 
 Done when: `OutIPCore` holds every rule of this spec with each case as a passing test, and `swift build && swift test` pass.
 
-Automated (the Checks cover them):
-
-- [ ] `swift build && swift test` exits with 0.
-- [ ] Every table row and every example of R6, R7, R13, R14, R16 to R18 and R20 to R22 is a test.
-
 Manual QA: none.
 
 ## Open Questions
 
 None of its own. The product assumptions behind these rules are in the map.
-
-## Tasks (build order)
-
-- [ ] T1. Package and reading: `Package.swift` with the two targets, `Reading`, the address rule and the country rule (R1–R7). Verify: `swift build && swift test`.
-- [ ] T2. Endpoints: `Endpoint`, the chain, and `parse` for the three formats, with the fixtures (R8–R13). Verify: `swift build && swift test`.
-- [ ] T3. Display: `Status`, the flag, the bar and the menu text (R14–R18). Verify: `swift build && swift test`.
-- [ ] T4. Interval and schedule (R19–R23). Verify: `swift build && swift test`.
-- [ ] T5. Spec workflow: delete this section and the automated Success Criteria; set the status line and the row in `docs/specs/README.md` to built. Verify: `swift build && swift test`.

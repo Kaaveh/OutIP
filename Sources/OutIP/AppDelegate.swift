@@ -8,6 +8,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private let calendar: Calendar
     private let locale: Locale
     private lazy var statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+    /// Nil in the self-check, which sends no request (menubar-app R22).
+    private var checker: Checker?
 
     /// The two modes differ only here and in `interval`: where the status, the calendar and the locale come from (R20).
     init(selfCheck: Bool) {
@@ -25,7 +27,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         menu.delegate = self
         statusItem.menu = menu
         show(status)
-        if selfCheck { SelfCheck.run(statusItem) }
+        if selfCheck {
+            SelfCheck.run(statusItem)
+        } else {
+            checker = Checker(show: { [unowned self] in show($0) })
+            checker?.check()
+        }
     }
 
     /// Stores a new status and draws the bar; nothing else changes the bar (R9).

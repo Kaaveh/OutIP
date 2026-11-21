@@ -26,3 +26,15 @@ enum Fixture {
 
     static let plainAddress = "203.0.113.7\n"
 }
+
+/// A Gregorian calendar in Asia/Kolkata: the half-hour offset catches UTC assumptions.
+let calendar: Calendar = {
+    var calendar = Calendar(identifier: .gregorian)
+    calendar.timeZone = TimeZone(identifier: "Asia/Kolkata")!
+    return calendar
+}()
+
+/// That calendar's date on 2026-11-21 at the given time.
+func at(_ hour: Int, _ minute: Int, _ second: Int) -> Date {
+    calendar.date(from: DateComponents(year: 2026, month: 11, day: 21, hour: hour, minute: minute, second: second))!
+}

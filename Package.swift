@@ -6,6 +6,11 @@ let package = Package(
     platforms: [.macOS(.v14)],
     targets: [
         .target(name: "OutIPCore"),
+        .executableTarget(
+            name: "OutIP",
+            dependencies: ["OutIPCore"],
+            swiftSettings: [.defaultIsolation(MainActor.self)]
+        ),
         .testTarget(name: "OutIPCoreTests", dependencies: ["OutIPCore"]),
     ],
     swiftLanguageModes: [.v6]

@@ -1,22 +1,65 @@
 import Foundation
 import OutIPCore
 
-/// The check: the endpoint chain over a new session per check (ip-check R1–R5).
+/// The check: the endpoint chain over a new session per check, and when to ask again (ip-check R1–R11).
 /// The only file with network code (menubar-app R27).
 final class Checker {
     private let show: (Status) -> Void
+    private let interval: () -> Int
     private var task: Task<Void, Never>?
+    private var timer: Timer?
+    /// Bumped whenever a check is replaced; a check that finds a newer one drops its answer (R8).
+    private var generation = 0
+    /// Failed checks in a row (R7).
+    private var failures = 0
+    /// Whether the last check was started by a debounced trigger (R8).
+    private var afterTrigger = false
 
-    init(show: @escaping (Status) -> Void) {
+    init(show: @escaping (Status) -> Void, interval: @escaping () -> Int) {
         self.show = show
+        self.interval = interval
     }
 
-    /// Starts a check now (R3, R4).
-    func check() {
+    /// Starts a check now, in place of the pending timer and a running check (R4, R6–R8).
+    func check(afterTrigger: Bool = false) {
+        replace()
+        let current = generation
         task = Task {
             let reading = await Self.ask()
+            guard current == generation else { return }
+            task = nil
+            failures = reading == nil ? failures + 1 : 0
             show(reading.map { .reading($0, at: Date()) } ?? .noAnswer(at: Date()))
+            self.afterTrigger = afterTrigger
+            schedule()
         }
+    }
+
+    /// A new interval replaces the pending timer; a running check is left alone (R11).
+    func intervalChanged() {
+        guard let timer else { return }
+        timer.invalidate()
+        schedule()
+    }
+
+    /// Cancels the pending timer and a running check, whose answer is then dropped (R8).
+    private func replace() {
+        timer?.invalidate()
+        timer = nil
+        task?.cancel()
+        task = nil
+        generation += 1
+    }
+
+    /// The one-shot timer for the next check (R6).
+    private func schedule() {
+        let delay = Schedule.delay(interval: TimeInterval(interval()), failures: failures, afterTrigger: afterTrigger)
+        let timer = Timer(timeInterval: delay, repeats: false) { [weak self] _ in
+            MainActor.assumeIsolated { self?.check() }
+        }
+        timer.tolerance = delay / 10
+        RunLoop.main.add(timer, forMode: .common)
+        self.timer = timer
     }
 
     /// A new ephemeral session: a new connection, this moment's route and proxy (R2). The caller invalidates it.

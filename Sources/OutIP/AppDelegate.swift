@@ -30,7 +30,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         if selfCheck {
             SelfCheck.run(statusItem)
         } else {
-            checker = Checker(show: { [unowned self] in show($0) })
+            checker = Checker(show: { [unowned self] in show($0) }, interval: { [unowned self] in interval })
             checker?.check()
         }
     }
@@ -74,7 +74,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
 
         menu.addItem(.separator())
-        menu.addItem(NSMenuItem(title: "Refresh now", action: nil, keyEquivalent: "r"))  // ip-check wires the action
+        let refresh = item("Refresh now", #selector(refreshNow))
+        refresh.keyEquivalent = "r"
+        menu.addItem(refresh)
 
         let intervals = NSMenu()
         intervals.autoenablesItems = false
@@ -113,10 +115,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         NSPasteboard.general.setString(address, forType: .string)
     }
 
-    /// Stores the chosen interval (R15).
+    /// Starts a check now (R14, ip-check R8).
+    @objc private func refreshNow() {
+        checker?.check()
+    }
+
+    /// Stores the chosen interval and reschedules the pending check (R15, ip-check R11).
     @objc private func chooseInterval(_ sender: NSMenuItem) {
         guard !selfCheck else { return }  // R22
         UserDefaults.standard.set(sender.tag, forKey: "interval")
+        checker?.intervalChanged()
     }
 
     /// The only place that calls `register()` (R19).

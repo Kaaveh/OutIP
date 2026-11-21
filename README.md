@@ -38,6 +38,8 @@ footprint -p "$(pgrep -x OutIP)"
 
 The header line gives `Footprint: <n> MB`. The target is under 30 MB.
 
+Measured 2026-11-21 on an Apple silicon Mac, macOS 27.2, after 18 minutes running on the default 30 s interval: 27 MB, steady across three samples 20 s apart (resident size 36 MB).
+
 ## What leaves the Mac
 
 One small HTTPS request per check, to a public endpoint run by Cloudflare, ident.me or Amazon. Like any website you open, that endpoint sees your address; that is how it can tell you what it is. OutIP sends nothing else, keeps no history and writes the address to no file.

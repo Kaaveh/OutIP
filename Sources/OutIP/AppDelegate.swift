@@ -122,7 +122,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     /// Stores the chosen interval and reschedules the pending check (R15, ip-check R11).
     @objc private func chooseInterval(_ sender: NSMenuItem) {
-        guard !selfCheck else { return }  // R22
+        guard !selfCheck, sender.tag != interval else { return }  // R22; the same interval keeps the pending timer
         UserDefaults.standard.set(sender.tag, forKey: "interval")
         checker?.intervalChanged()
     }

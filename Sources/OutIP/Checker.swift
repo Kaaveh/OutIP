@@ -49,6 +49,9 @@ final class Checker {
 
     /// Starts a check now, in place of the pending timer and a running check (R4, R6–R8).
     func check(afterTrigger: Bool = false) {
+        // Every caller runs with the display on (sleep cancels the timer and the debounce, and Refresh now
+        // needs the menu), so a missed screensDidWake can't stop the timer for good.
+        screensAsleep = false
         replace()
         let current = generation
         task = Task {

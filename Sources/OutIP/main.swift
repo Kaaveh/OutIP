@@ -1,12 +1,13 @@
 import AppKit
 
+let selfCheck = CommandLine.arguments.contains("--self-check")
+
 // No status item and no bundle needed: ask every endpoint once, print, exit (ip-check R12).
-if CommandLine.arguments.contains("--probe") {
+// The self-check sends nothing, so it wins over --probe (menubar-app R22).
+if !selfCheck && CommandLine.arguments.contains("--probe") {
     Task { exit(await Checker.probe()) }
     dispatchMain()
 }
-
-let selfCheck = CommandLine.arguments.contains("--self-check")
 
 // Outside the bundle the login item and the stored interval would hang on the wrong identity (R5).
 if !selfCheck && Bundle.main.bundleIdentifier == nil {

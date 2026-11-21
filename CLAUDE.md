@@ -13,15 +13,18 @@ Subagents save the main context, so delegate research and build steps to them. R
 ```
 swift build
 swift test
+scripts/check.sh                                      # the gate: rules, tests, ad-hoc bundle, self-check (no prompts, no requests)
+scripts/build-app.sh                                  # build/OutIP.app, signed with $OUTIP_SIGN_IDENTITY or ad-hoc
+build/OutIP.app/Contents/MacOS/OutIP --self-check     # sample data; needs the logged-in desktop session
 ```
 
-Each module adds its own commands here when it is built.
+`scripts/install.sh` is for a person only. Each module adds its own commands here when it is built.
 
 ## Layout
 
 - `OutIPCore` (`Sources/OutIPCore/`): the pure rules (reading an endpoint's reply, the flag, the bar and menu text, the intervals, the delay to the next check). Foundation only.
 - `OutIPCoreTests` (`Tests/OutIPCoreTests/`): Swift Testing table tests for those rules.
-- `OutIP` (`Sources/OutIP/`): the AppKit shell that asks the endpoints and draws what `OutIPCore` returns. It arrives with `menubar-app`.
+- `OutIP` (`Sources/OutIP/`): the AppKit shell that asks the endpoints and draws what `OutIPCore` returns. `Support/Info.plist` is its bundle's plist; `scripts/` builds, checks and installs `build/OutIP.app`.
 
 ## Conventions
 

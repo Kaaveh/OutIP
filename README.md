@@ -1,5 +1,7 @@
 # OutIP
 
+![OutIP in the menu bar, with its menu open](docs/screenshot.png)
+
 OutIP is a macOS menu bar app that shows your public IPv4 address and the flag of the country it belongs to: `🇸🇪 203.0.113.7`. It checks again every 30 seconds, or at a pace you pick, and right after the network changes, so a glance tells you where a VPN or a proxy lets your traffic out.
 
 Status: built; the manual checks on a real Mac are still open. The specs are in [docs/specs](docs/specs/README.md).
